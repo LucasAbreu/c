@@ -30,6 +30,8 @@ void put_multiline(const char *s,int width);
 void strip(char *s);
 char * allocFilename( const char* format, const char*  base, const char*  leaf );
 void freeFilename( char* filename );
+void cleanComment( char* filename );
+char * appendComment( char* dirname );
 
 int main (int argc, const char * argv[]) {
 
@@ -38,9 +40,9 @@ int main (int argc, const char * argv[]) {
     if (getcwd(cwd, sizeof(cwd)) != NULL)
         ;
     else
-        perror("getcwd() error");	
+        perror("getcwd() error");
 
-    int numargs, all=0, asc=0, desc=0, push=0, uk=0, help=0, current=0;
+    int numargs, all=0, asc=0, desc=0, push=0, uk=0, help=0, current=0, clean=0;
     const char *c;
 
     numargs = argc;
@@ -60,6 +62,8 @@ int main (int argc, const char * argv[]) {
             desc = 1;
         else if (!strcmp(argv[numargs], "+"))
             asc = 1;
+        else if (!strcmp(argv[numargs], "clean"))
+            clean = 1;
         else
             uk++;
     }
@@ -77,7 +81,7 @@ int main (int argc, const char * argv[]) {
         case 1: printUsage();
                 return 1;
                 break;
-        case 2: 
+        case 2:
                 // Show the help menu
                 if (help) {
                     printUsage();
@@ -100,7 +104,7 @@ int main (int argc, const char * argv[]) {
                     checkComment(argv[1], cwd);
                 }
                 break;
-        case 3: 
+        case 3:
 
                 if (current) {										// Add comment to the current directory
                     // char *file;
@@ -112,6 +116,8 @@ int main (int argc, const char * argv[]) {
                 } else if (all && asc) {					// Print all files in ascending order
                     makeDir(cwd);
                     printAllOrder(cwd, false);
+                } else if ( clean ){
+                    cleanComment( argv[1] );                 // Clean file comment
                 }
                 else {														// Add comment to to given file
                     makeDir(cwd);
@@ -119,12 +125,12 @@ int main (int argc, const char * argv[]) {
                 }
                 break;
 
-        case 4: 
+        case 4:
                 // Push comment to the current directory
                 if (current && push) {
                     addComment(argv[1], cwd, argv[3], true);
                     // Add a comment to the given filename
-                } 
+                }
                 // Push comment to given file
                 else	if ( push) {
                     makeDir(cwd);
@@ -217,7 +223,7 @@ void checkComment(const char file[], char path[]) {
         int ford = fileOrDirectory(file);
         switch(ford) {
             // Directory was entered
-            case 0: 
+            case 0:
                 // Appends the directory name to the end of current path
                 dir = allocFilename("%s/%s", path, file);
                 makeDir(dir);
@@ -239,7 +245,7 @@ void checkComment(const char file[], char path[]) {
                 freeFilename(dir);
                 break;
                 // File is entered
-            case 1:	
+            case 1:
                 // makeDir(path);
                 // Adds /.comment to the end of the current path
                 s = allocFilename("%s/%s", path, COMMENT);
@@ -339,7 +345,7 @@ void addComment(const char file[], char path[], const char comment[], bool appen
         int ford = fileOrDirectory(file);
         switch(ford) {
             // File was entered
-            case 0: 
+            case 0:
                 // Adds the file entered to the end of the current path
                 dir = allocFilename("%s/%s", path, file);
                 // Creates the directory .comment at that path
@@ -356,7 +362,7 @@ void addComment(const char file[], char path[], const char comment[], bool appen
                     fp2 = fopen(fin, "a");
                     fprintf(fp2, " %s", comment);
                 } else {
-                    fp2 = fopen(fin, "w+");		
+                    fp2 = fopen(fin, "w+");
                     fprintf(fp2, "%s", comment);
                 }
                 fclose(fp2);
@@ -381,7 +387,7 @@ void addComment(const char file[], char path[], const char comment[], bool appen
                         fp = fopen(full, "a");
                         fprintf(fp, " %s", comment);
                     } else {
-                        fp = fopen(full, "w+");		
+                        fp = fopen(full, "w+");
                         fprintf(fp, "%s", comment);
                     }
                     fclose(fp);
@@ -437,6 +443,7 @@ void printUsage() {
     fprintf(stderr, "  c <filename> to view that files comment if there is one.\n");
     fprintf(stderr, "  c <filename> \"comment\" give the entered file the entered comment\n");
     fprintf(stderr, "  c <filename> -p \"{comment}\" to append comment to that files comment.\n");
+    fprintf(stderr, "  c <filename> clear to clean that file comments.\n");
     fprintf(stderr, "  Replace <filename> with . to do the commands on the current directory.\n\n");
 }
 
@@ -475,4 +482,31 @@ char * allocFilename( const char* format, const char*  base, const char*  leaf )
 void freeFilename( char* filename )
 {
     free(filename);
+}
+
+void cleanComment( char* filename){
+
+    int fileOrDir = fileOrDirectory( filename );
+    char *s;
+
+    if( fileOrDir == 1 ){               // Case is file
+        printf("Know its a file\n");
+        char path[50] = ".comment/";
+        strcat( path, filename );
+        strcat( path, ".comment");
+        printf("Alloc error\n");
+        s = path;
+    }else if( fileOrDir == 0 ){         // Case is directory
+        printf("We do not support directory comments clean yet!\n");
+        // I removed all the code used trying to make this part work.
+    }
+
+    if( !dirOrFileExists( s ) ){
+
+        fprintf(stderr, "There is no comment for the file or dir %s.\n", filename );
+        return;
+    }
+    unlink( s );
+    // For some reason unlink does not seems to erase a FILE INSIDE A FOLDER, even if the path (string s) is correct.
+    // Hope someone can help with that. :)
 }
