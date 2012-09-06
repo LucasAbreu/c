@@ -484,29 +484,31 @@ void freeFilename( char* filename )
     free(filename);
 }
 
+
+// Still not working well with current directory when refered
+// as a dot (.). It tries to put a comment "clean" instead.
 void cleanComment( char* filename){
 
     int fileOrDir = fileOrDirectory( filename );
-    char *s;
+    char *s, path[50] = "\0";
 
     if( fileOrDir == 1 ){               // Case is file
-        printf("Know its a file\n");
-        char path[50] = ".comment/";
+        strcat( path, ".comment/" );
         strcat( path, filename );
-        strcat( path, ".comment");
-        printf("Alloc error\n");
+        strcat( path, ".comment" );
         s = path;
     }else if( fileOrDir == 0 ){         // Case is directory
-        printf("We do not support directory comments clean yet!\n");
-        // I removed all the code used trying to make this part work.
+
+        strcat( path, filename );
+        if(  path[strlen(path) -1]  != '/' )    // Checks and corrects if has a '/' at the end of argument.
+            path[strlen(path)] = '/';
+        strcat( path, ".comment/..comment");
+        s = path;
+
     }
-
     if( !dirOrFileExists( s ) ){
-
         fprintf(stderr, "There is no comment for the file or dir %s.\n", filename );
         return;
     }
     unlink( s );
-    // For some reason unlink does not seems to erase a FILE INSIDE A FOLDER, even if the path (string s) is correct.
-    // Hope someone can help with that. :)
 }
