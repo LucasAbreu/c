@@ -106,7 +106,7 @@ int main (int argc, const char * argv[]) {
                 break;
         case 3:
 
-                if (current) {										// Add comment to the current directory
+                if ( current && !clean ) {										// Add comment to the current directory
                     // char *file;
                     // file = "CURRENT";
                     addComment(argv[1], cwd, argv[2], false);
@@ -491,24 +491,27 @@ void cleanComment( char* filename){
 
     int fileOrDir = fileOrDirectory( filename );
     char *s, path[50] = "\0";
+	if( !strcmp( filename, ".") ) {				// Case is current directory
+		strcat( path, ".comment/..comment" );
+//		s = path;
 
-    if( fileOrDir == 1 ){               // Case is file
+    }else if( fileOrDir == 1 ){               // Case is file
         strcat( path, ".comment/" );
         strcat( path, filename );
         strcat( path, ".comment" );
-        s = path;
+//        s = path;
     }else if( fileOrDir == 0 ){         // Case is directory
 
         strcat( path, filename );
         if(  path[strlen(path) -1]  != '/' )    // Checks and corrects if has a '/' at the end of argument.
             path[strlen(path)] = '/';
-        strcat( path, ".comment/..comment");
-        s = path;
+        	strcat( path, ".comment/..comment");
+//        s = path;
 
     }
-    if( !dirOrFileExists( s ) ){
-        fprintf(stderr, "There is no comment for the file or dir %s.\n", filename );
+    if( !dirOrFileExists( path ) ){
+        fprintf(stderr, "There is no comment for the file or dir \'%s\'.\n", filename );
         return;
     }
-    unlink( s );
+    unlink( path );
 }
